@@ -1,0 +1,127 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <sstream>
+#include <ctime>
+
+
+using namespace std;
+
+
+	string generateKey(const string& text, const string& key)
+{
+    string generatedKey = key;
+    while (generatedKey.length() < text.length()) {
+        generatedKey += key;
+    }
+    return generatedKey;
+}
+
+
+	string decryptVigenere(const string& ciphertext, const string& key) 
+{
+    string plaintext;
+    for (size_t i = 0; i < ciphertext.length(); i++) {
+        char c = ciphertext[i];
+        if (isalpha(c)) {
+            char base = isupper(c) ? 'A' : 'a';
+            char decryptedChar = ((c - base) - (key[i % key.length()] - 'A' + 26)) % 26 + base;
+            if (decryptedChar < base) {
+                decryptedChar += 26;
+            }
+            plaintext += decryptedChar;
+        } else {
+            plaintext += c;
+        }
+    }
+    return plaintext;
+}
+
+
+	vector<string> loadDictionary(const string& filename) 
+	{
+    vector<string> dictionary;
+    ifstream file(filename);
+    if (file.is_open()) 
+	{
+        string word;
+        while (getline(file, word)) {
+            transform(word.begin(), word.end(), word.begin(), ::toupper);
+            dictionary.push_back(word);
+        }
+        file.close();
+    } 
+	else {
+        cerr << "Error: Unable to open dictionary file." << endl;
+    }
+    return dictionary;
+}
+
+
+	double calculateAccuracy(const string& plaintext, const vector<string>& dictionary) 
+{
+    int validWordCount = 0;
+    string word;
+    istringstream iss(plaintext);
+    while (iss >> word) {
+        if (find(dictionary.begin(), dictionary.end(), word) != dictionary.end()) 
+		{
+            validWordCount++;
+        }
+    }
+    return static_cast<double>(validWordCount) / static_cast<double>(dictionary.size());
+}
+
+
+	pair<string, string> findAccurateKey(const string& ciphertext, char spaceCharacter, const vector<string>& dictionary) 
+{
+    string bestKey;
+    string bestPlaintext;
+    double bestAccuracy = 0.0;
+    for (char a = 'A'; a <= 'Z'; a++) 
+	{
+        string key(ciphertext.length(), a);
+        string decryptedMessage = decryptVigenere(ciphertext, key);
+        double accuracy = calculateAccuracy(decryptedMessage, dictionary);
+        if (accuracy > bestAccuracy) 
+		{
+            bestKey = key;
+            bestPlaintext = decryptedMessage;
+            bestAccuracy = accuracy;
+        }
+    }
+    for (char& c : bestPlaintext) 
+	{
+        if (c == ' ') {
+            c = spaceCharacter;
+        }
+    }
+    return make_pair(bestPlaintext, bestKey);
+}
+
+
+int main() 
+{
+    char spaceCharacter = '_';
+    vector<string> dictionary = loadDictionary("wordlist.txt"); 
+    while (true) {
+        cout << "\t\t\t\t\t-------------Vigenere Cipher Decryption Program----------\n\n";
+        string ciphertext;
+        cout << "Enter the Vigenere ciphertext to decrypt: ";
+        getline(cin, ciphertext);
+        ciphertext.erase(remove_if(ciphertext.begin(), ciphertext.end(), ::isspace), ciphertext.end());
+        transform(ciphertext.begin(), ciphertext.end(), ciphertext.begin(), ::toupper);
+        pair<string, string> result = findAccurateKey(ciphertext, spaceCharacter, dictionary);
+        cout << "Please wait while we try different keys...\n";
+        cout << endl;
+        sleep(5);
+        cout << "Your Correct Plaintext:" << endl;
+        cout << result.first << endl;
+        cout << "The Key Used Is:" << endl;
+        cout << result.second << endl;
+        cout << "Thank you for using this program" << endl << endl;
+        break;
+    }
+}

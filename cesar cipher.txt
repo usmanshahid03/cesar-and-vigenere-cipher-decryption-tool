@@ -1,0 +1,119 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <algorithm>
+
+
+using namespace std;
+
+
+string decrypt(const string& ciphertext, int key) 
+{
+    string plaintext = "";
+
+
+    for (char c : ciphertext) 
+	{
+        if (isalpha(c)) 
+		{
+            char base = (islower(c)) ? 'a' : 'A';
+            char decrypted_char = ((c - base - key + 26) % 26) + base;
+            plaintext = plaintext+ decrypted_char;
+        }
+		 else
+		{
+            plaintext = plaintext+ c; 
+        }
+    }
+    return plaintext;
+}
+
+
+bool isWordInDictionary(const string& word, istream& dictionaryStream) 
+{
+    string dWord;
+    while (dictionaryStream >> dWord)
+	{
+        if (word == dWord) 
+		{
+            return true;
+        }
+    }
+    return false;
+}
+
+
+int main()
+{
+	cout<< "\t\t\t\t\t-------------Caeser Cipher Decryption Program----------\n";
+    string ciphertext;
+    cout << "Enter Caesar ciphertext to decrypt= ";
+    cin >> ciphertext;
+
+
+    ifstream dictionaryFile("wordlist.txt");
+    if (!dictionaryFile.is_open()) 
+	{
+        cerr << "Error! Could not open dictionary file." << endl;
+        cout<<endl;
+        cout <<"ThankYou for using this program";
+		return 1;
+    }
+
+
+    string correctPlaintext;
+    int correctKey = -1;
+    for (int key = 0; key < 26; ++key) 
+	{
+        string plaintext = decrypt(ciphertext, key);
+        istringstream iss(plaintext);
+
+
+        bool isPossiblePlaintext = true;
+        string token;
+
+
+        while (iss >> token) 
+		{
+            if (!isWordInDictionary(token, dictionaryFile)) 
+			{
+                isPossiblePlaintext = false;
+                break;
+            }
+        }
+
+
+        if (isPossiblePlaintext) 
+		{
+            correctPlaintext = plaintext;
+            correctKey = key;
+            break;
+        }
+
+
+        dictionaryFile.clear();
+        dictionaryFile.seekg(0, ios::beg);
+    }
+
+
+    if (!correctPlaintext.empty()) 
+	{
+		cout<<endl;
+		cout<<"Please wait till we try a number of different keys...\n";
+		cout<<endl;
+		sleep(5);
+        cout << "Your Correct plaintext= " << correctPlaintext << endl;
+        cout << "The Correct key is " << correctKey << endl;
+        cout<<endl;
+		cout <<"ThankYou for using this program ";
+    } else {
+    	cout<<"Please wait till we try a number of different keys...\n";
+    	sleep(5);
+        cout << "No valid plaintext found." << endl;
+    	cout<<endl;
+		cout <<"ThankYou for using this program";
+	}
+
+
+    dictionaryFile.close();
+}
